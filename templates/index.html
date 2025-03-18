@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Send Time Optimization</title>
+    <title>Email Send Time Optimization</title>
 </head>
 <body>
     <h2>Email Send Time Optimization</h2>
@@ -22,23 +22,39 @@
         document.getElementById("sendTimeForm").addEventListener("submit", async function(event) {
             event.preventDefault();
             
-            const customer_id = document.getElementById("customer_id").value;
+            const customer_id = parseInt(document.getElementById("customer_id").value);
             
-            const response = await fetch("/predict-send-time/", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ customer_id: parseInt(customer_id) })
-            });
-            
-            const data = await response.json();
-            if (data.best_send_hour !== undefined) {
-                document.getElementById("result").innerText = `Best Send Hour: ${data.best_send_hour}`;
-                document.getElementById("formula").innerText = `Formula: Mean of (email_view_date_time, cta_id1_click_datetime, cta_id2_click_datetime)`;
-                document.getElementById("calculation").innerText = `Calculation: (${data.times_used.join(" + ")}) / ${data.times_used.length} = ${data.best_send_hour}`;
-            } else {
-                document.getElementById("result").innerText = data.error;
+            try {
+                const response = await fetch("/predict-send-time/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ customer_id })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.best_send_times && data.best_send_times.length > 0) {
+                        document.getElementById("result").innerText = `Best Send Times: ${data.best_send_times.join(", ")}`;
+                        document.getElementById("formula").innerText = `Formula: ${data.formula}`;
+                        document.getElementById("calculation").innerText =
+                            `Step-by-Step Calculation: ${data.calculation}\n` +
+                            `Engagement Times Used: ${data.times_used.length > 0 ? data.times_used.join(", ") : "None"}`;
+                    } else {
+                        document.getElementById("result").innerText = data.error || "Sorry, we don't have enough data.";
+                        document.getElementById("formula").innerText = "";
+                        document.getElementById("calculation").innerText = "";
+                    }
+                } else {
+                    document.getElementById("result").innerText = `Error: ${data.error}`;
+                    document.getElementById("formula").innerText = "";
+                    document.getElementById("calculation").innerText = "";
+                }
+            } catch (error) {
+                document.getElementById("result").innerText = "Error connecting to the API";
                 document.getElementById("formula").innerText = "";
                 document.getElementById("calculation").innerText = "";
+                console.error("API Error:", error);
             }
         });
     </script>
