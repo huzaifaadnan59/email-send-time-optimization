@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Time Optimization</title>
+</head>
+<body>
+    <h2>Email Send Time Optimization</h2>
+    <form id="sendTimeForm">
+        <label for="customer_id">Customer ID:</label>
+        <input type="number" id="customer_id" name="customer_id" required>
+        <br>
+        <button type="submit">Predict Best Send Time</button>
+    </form>
+    
+    <h3 id="result"></h3>
+    <h4 id="formula"></h4>
+    <h4 id="calculation"></h4>
+    
+    <script>
+        document.getElementById("sendTimeForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            
+            const customer_id = document.getElementById("customer_id").value;
+            
+            const response = await fetch("/predict-send-time/", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ customer_id: parseInt(customer_id) })
+            });
+            
+            const data = await response.json();
+            if (data.best_send_hour !== undefined) {
+                document.getElementById("result").innerText = `Best Send Hour: ${data.best_send_hour}`;
+                document.getElementById("formula").innerText = `Formula: Mean of (email_view_date_time, cta_id1_click_datetime, cta_id2_click_datetime)`;
+                document.getElementById("calculation").innerText = `Calculation: (${data.times_used.join(" + ")}) / ${data.times_used.length} = ${data.best_send_hour}`;
+            } else {
+                document.getElementById("result").innerText = data.error;
+                document.getElementById("formula").innerText = "";
+                document.getElementById("calculation").innerText = "";
+            }
+        });
+    </script>
+</body>
+</html>
